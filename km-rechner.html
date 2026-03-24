@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>km-Dienstanteil</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f4f2ee;
+    --surface: #ffffff;
+    --border: #d8d4cc;
+    --text: #1a1916;
+    --muted: #7a7770;
+    --green: #2d6a4f;
+    --green-bg: #d8f3e0;
+    --amber: #7d4f00;
+    --amber-bg: #fff3cd;
+    --red: #8b1a1a;
+    --red-bg: #fde8e8;
+    --bar-b: #2d6a4f;
+    --bar-a: #74c69d;
+    --bar-p: #e63946;
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  header {
+    flex-shrink: 0;
+    padding: 8px 10px 6px;
+    border-bottom: 2px solid var(--text);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  header h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  header span {
+    font-size: 0.6rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 6px;
+    min-height: 0;
+  }
+
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  section.grows {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .section-head {
+    background: var(--text);
+    color: #fff;
+    padding: 2px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .section-body { padding: 2px 8px 4px; }
+
+  .field {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .field:last-child { border-bottom: none; }
+
+  .field label {
+    font-size: 0.68rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .badge {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .badge.gut      { background: var(--bar-b); }
+  .badge.ok       { background: var(--bar-a); }
+  .badge.schlecht { background: var(--bar-p); }
+
+  input[type="number"] {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    width: 72px;
+    padding: 3px 5px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--text);
+    text-align: right;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  input[type="number"]:focus { border-color: var(--text); }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
+
+  .unit {
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    width: 18px;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .metric {
+    background: var(--surface);
+    padding: 5px 8px;
+  }
+
+  .metric-label {
+    font-size: 0.56rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 1px;
+  }
+
+  .metric-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .bar-container {
+    padding: 6px 8px 5px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .bar-outer {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .ziel-marker {
+    position: absolute;
+    top: -14px;
+    width: 2px;
+    height: 28px;
+    background: var(--text);
+    transition: left 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .ziel-label {
+    position: absolute;
+    top: -22px;
+    font-size: 0.56rem;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+    transform: translateX(-50%);
+    white-space: nowrap;
+    transition: left 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .bar-track {
+    height: 13px;
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+    background: #eee;
+  }
+
+  .bar-seg { height: 100%; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+
+  .bar-legend {
+    display: flex;
+    gap: 12px;
+    font-size: 0.62rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-right: 3px;
+    vertical-align: middle;
+  }
+
+  .result {
+    flex: 1;
+    padding: 7px 8px;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+  }
+
+  .result strong { font-weight: 500; }
+  .result.ok   { background: var(--green-bg); color: var(--green); }
+  .result.warn { background: var(--amber-bg); color: var(--amber); }
+  .result.bad  { background: var(--red-bg);   color: var(--red);   }
+
+  .result-number {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: block;
+    margin: 1px 0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111110;
+      --surface: #1c1c1a;
+      --border: #2e2e2b;
+      --text: #e8e4dc;
+      --muted: #7a7770;
+      --green: #74c69d;
+      --green-bg: #0d2b1a;
+      --amber: #f4c542;
+      --amber-bg: #2a1f00;
+      --red: #f4a5a5;
+      --red-bg: #2a0a0a;
+    }
+    input[type="number"] { background: #111110; }
+    .bar-track { background: #2e2e2b; }
+    .section-head { background: var(--text); color: #111110; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>km-Dienstanteil</h1>
+  <span>Steuerlicher Fahrtenkostenrechner</span>
+</header>
+
+<div class="container">
+
+  <section>
+    <div class="section-head">IST-Kilometer</div>
+    <div class="section-body">
+      <div class="field">
+        <label><span class="badge gut"></span>Betrieblich (Dienstfahrten)</label>
+        <input type="number" id="i-betrieb" value="18028" min="0" inputmode="numeric" oninput="calc()">
+        <span class="unit">km</span>
+      </div>
+      <div class="field">
+        <label><span class="badge ok"></span>Arbeitsweg (Büro hin/zurück)</label>
+        <input type="number" id="i-arbeit" value="349" min="0" inputmode="numeric" oninput="calc()">
+        <span class="unit">km</span>
+      </div>
+      <div class="field">
+        <label><span class="badge schlecht"></span>Privat</label>
+        <input type="number" id="i-privat" value="2184" min="0" inputmode="numeric" oninput="calc()">
+        <span class="unit">km</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">Ziel &amp; Planung</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Mindest-Dienstanteil</label>
+        <input type="number" id="i-ziel" value="90" min="1" max="99" step="0.5" inputmode="decimal" oninput="calc()">
+        <span class="unit">%</span>
+      </div>
+      <div class="field">
+        <label><span class="badge schlecht"></span>Noch geplante Privatfahrten</label>
+        <input type="number" id="i-privat-plan" value="0" min="0" inputmode="numeric" oninput="calc()">
+        <span class="unit">km</span>
+      </div>
+      <div class="field">
+        <label><span class="badge gut"></span>Noch geplante Dienstfahrten</label>
+        <input type="number" id="i-dienst-plan" value="0" min="0" inputmode="numeric" oninput="calc()">
+        <span class="unit">km</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="grows">
+    <div class="section-head">Auswertung</div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Gesamt IST</div>
+        <div class="metric-value" id="m-gesamt">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Dienstanteil</div>
+        <div class="metric-value" id="m-anteil">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Fehlen</div>
+        <div class="metric-value" id="m-fehlt">—</div>
+      </div>
+    </div>
+
+    <div class="bar-container">
+      <div class="bar-outer">
+        <div class="ziel-label" id="ziel-label">Ziel</div>
+        <div class="ziel-marker" id="ziel-marker"></div>
+        <div class="bar-track">
+          <div class="bar-seg" id="bar-b" style="background:var(--bar-b)"></div>
+          <div class="bar-seg" id="bar-a" style="background:var(--bar-a)"></div>
+          <div class="bar-seg" id="bar-p" style="background:var(--bar-p)"></div>
+        </div>
+      </div>
+      <div class="bar-legend">
+        <span><span class="dot" style="background:var(--bar-b)"></span>Betrieblich</span>
+        <span><span class="dot" style="background:var(--bar-a)"></span>Arbeitsweg</span>
+        <span><span class="dot" style="background:var(--bar-p)"></span>Privat</span>
+      </div>
+    </div>
+
+    <div class="result" id="result-box">—</div>
+  </section>
+
+</div>
+
+<script>
+function fmt(n) { return Math.round(n).toLocaleString('de-DE'); }
+function fmtPct(n) { return n.toFixed(1).replace('.', ',') + '\u202f%'; }
+
+var FIELDS = ['i-betrieb','i-arbeit','i-privat','i-ziel','i-privat-plan','i-dienst-plan'];
+
+function save() {
+  var data = {};
+  FIELDS.forEach(function(id) { data[id] = document.getElementById(id).value; });
+  try { localStorage.setItem('km-rechner', JSON.stringify(data)); } catch(e) {}
+}
+
+function load() {
+  try {
+    var raw = localStorage.getItem('km-rechner');
+    if (!raw) return;
+    var data = JSON.parse(raw);
+    FIELDS.forEach(function(id) { if (data[id] !== undefined) document.getElementById(id).value = data[id]; });
+  } catch(e) {}
+}
+
+function calc() {
+  save();
+  var b  = +document.getElementById('i-betrieb').value      || 0;
+  var a  = +document.getElementById('i-arbeit').value       || 0;
+  var p  = +document.getElementById('i-privat').value       || 0;
+  var pp = +document.getElementById('i-privat-plan').value  || 0;
+  var dp = +document.getElementById('i-dienst-plan').value   || 0;
+  var ziel = (+document.getElementById('i-ziel').value      || 90) / 100;
+
+  var ges    = b + a + p;
+  var dienst = b + a;
+  var anteil = ges > 0 ? dienst / ges : 0;
+
+  // Prognose: IST + geplante Fahrten beider Arten
+  var gesPrognose    = ges + pp + dp;
+  var dienstPrognose = dienst + dp;
+  var anteilPrognose = gesPrognose > 0 ? dienstPrognose / gesPrognose : 0;
+
+  // Mindest-Dienstanteil bezogen auf alle (IST + geplante) Privatkilometer
+  var privatGesamt = p + pp;
+  var minDienst    = (ziel > 0 && ziel < 1) ? ziel / (1 - ziel) * privatGesamt : 0;
+
+  // Fehlt: wie viele Dienst-km fehlen noch, nach Abzug der geplanten Dienstfahrten
+  var fehlt = Math.max(0, minDienst - dienstPrognose);
+
+  // Puffer: wie viele private km dürfen noch dazu kommen, bevor Limit gerissen wird
+  // Formel: dienstPrognose = ziel/(1-ziel) * (privatGesamt + puffer)  =>  puffer = dienstPrognose*(1-ziel)/ziel - privatGesamt
+  var puffer = ziel > 0 && ziel < 1 ? Math.floor(dienstPrognose * (1 - ziel) / ziel - privatGesamt) : 0;
+
+  document.getElementById('m-gesamt').textContent = fmt(gesPrognose) + '\u202fkm';
+  document.getElementById('m-anteil').textContent = fmtPct(anteilPrognose * 100);
+  document.getElementById('m-fehlt').textContent  = fehlt < 1 ? '–' : fmt(Math.ceil(fehlt)) + '\u202fkm';
+
+  var bb  = gesPrognose > 0 ? (b + dp) / gesPrognose * 100 : 0;
+  var aa  = gesPrognose > 0 ? a / gesPrognose * 100 : 0;
+  var pp2 = gesPrognose > 0 ? (p + pp) / gesPrognose * 100 : 0;
+  document.getElementById('bar-b').style.width = bb  + '%';
+  document.getElementById('bar-a').style.width = aa  + '%';
+  document.getElementById('bar-p').style.width = pp2 + '%';
+
+  var marker = document.getElementById('ziel-marker');
+  var zlabel = document.getElementById('ziel-label');
+  marker.style.left = (ziel * 100) + '%';
+  zlabel.style.left = (ziel * 100) + '%';
+  zlabel.textContent = fmtPct(ziel * 100);
+
+  var box = document.getElementById('result-box');
+  if (anteilPrognose >= ziel && fehlt < 1) {
+    box.className = 'result ok';
+    var istHinweis = (pp > 0 || dp > 0) ? 'Prognose ' + fmtPct(anteilPrognose * 100) + ' (IST: ' + fmtPct(anteil * 100) + ')' : fmtPct(anteil * 100);
+    box.innerHTML = '<strong>Limit eingehalten.</strong> Dienstanteil ' + istHinweis + ' – Ziel ' + fmtPct(ziel * 100) + ' erreicht.<br>Privat-Puffer: Du kannst noch ca.<span class="result-number">' + fmt(Math.max(0, puffer)) + '\u202fkm</span>privat fahren.';
+  } else {
+    var gesNach    = gesPrognose + Math.ceil(fehlt);
+    var anteilNach = gesNach > 0 ? (dienstPrognose + Math.ceil(fehlt)) / gesNach : 0;
+    box.className  = fehlt <= 500 ? 'result warn' : 'result bad';
+    var planNote = [];
+    if (pp > 0) planNote.push(fmt(pp) + '\u202fkm privat');
+    if (dp > 0) planNote.push(fmt(dp) + '\u202fkm dienstlich geplant');
+    box.innerHTML  = '<strong>Dienstanteil zu niedrig.</strong> Du brauchst noch:<span class="result-number">' + fmt(Math.ceil(fehlt)) + '\u202fkm</span>dienstlich → danach ' + fmtPct(anteilNach * 100) + ' Dienstanteil' + (planNote.length ? ' (inkl. ' + planNote.join(', ') + ').' : '.');
+  }
+}
+
+load();
+calc();
+</script>
+</body>
+</html>
